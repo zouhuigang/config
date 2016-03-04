@@ -12,9 +12,15 @@ import (
 	"github.com/Unknwon/goconfig"
 )
 
-var ConfigFile *goconfig.ConfigFile
+var (
+	ConfigFile *goconfig.ConfigFile
 
-var ROOT string
+	ROOT string
+
+	TemplateDir string
+)
+
+const mainIniPath = "config/env.ini"
 
 func init() {
 	curFilename := os.Args[0]
@@ -30,27 +36,33 @@ func init() {
 
 	ROOT = filepath.Dir(filepath.Dir(binaryPath))
 
-	configPath := ROOT + "/config/env.ini"
+	configPath := ROOT + "/" + mainIniPath
 
 	if !fileExist(configPath) {
 		curDir, _ := os.Getwd()
 		pos := strings.LastIndex(curDir, "src")
 		if pos == -1 {
-			panic("can't find config/env.ini")
+			panic("can't find " + mainIniPath)
 		}
 
 		ROOT = curDir[:pos]
 
-		configPath = ROOT + "/config/env.ini"
+		configPath = ROOT + "/" + mainIniPath
 	}
+
+	TemplateDir = ROOT + "/template/"
 
 	ConfigFile, err = goconfig.LoadConfigFile(configPath)
 	if err != nil {
 		panic(err)
 	}
 
+	if err = loadIncludeFiles(); err != nil {
+		panic("load include files error:" + err.Error())
+	}
+
 	go func() {
-		ch := make(chan os.Signal, 10)
+		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, syscall.SIGUSR1)
 
 		for {
@@ -65,13 +77,28 @@ func init() {
 
 func ReloadConfigFile() {
 	var err error
-	configPath := ROOT + "/config/env.ini"
+	configPath := ROOT + mainIniPath
 	ConfigFile, err = goconfig.LoadConfigFile(configPath)
 	if err != nil {
 		fmt.Println("reload config file, error:", err)
 		return
 	}
+
+	if err = loadIncludeFiles(); err != nil {
+		fmt.Println("reload files include files error:", err)
+		return
+	}
 	fmt.Println("reload config file successfully！")
+}
+
+func loadIncludeFiles() error {
+	includeFile := ConfigFile.MustValue("include_files", "path", "")
+	if includeFile != "" {
+		includeFiles := strings.Split(includeFile, ",")
+		return ConfigFile.AppendFiles(includeFiles...)
+	}
+
+	return nil
 }
 
 // fileExist 检查文件或目录是否存在
