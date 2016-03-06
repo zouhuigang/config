@@ -20,7 +20,7 @@ var (
 	TemplateDir string
 )
 
-const mainIniPath = "config/env.ini"
+const mainIniPath = "/config/env.ini"
 
 func init() {
 	curFilename := os.Args[0]
@@ -36,7 +36,7 @@ func init() {
 
 	ROOT = filepath.Dir(filepath.Dir(binaryPath))
 
-	configPath := ROOT + "/" + mainIniPath
+	configPath := ROOT + mainIniPath
 
 	if !fileExist(configPath) {
 		curDir, _ := os.Getwd()
@@ -47,7 +47,7 @@ func init() {
 
 		ROOT = curDir[:pos]
 
-		configPath = ROOT + "/" + mainIniPath
+		configPath = ROOT + mainIniPath
 	}
 
 	TemplateDir = ROOT + "/template/"
