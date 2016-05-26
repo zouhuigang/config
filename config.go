@@ -42,19 +42,22 @@ func init() {
 		curDir, _ := os.Getwd()
 		pos := strings.LastIndex(curDir, "src")
 		if pos == -1 {
-			panic("can't find " + mainIniPath)
+			// panic("can't find " + mainIniPath)
+			fmt.Println("can't find " + mainIniPath)
+		} else {
+			ROOT = curDir[:pos]
+
+			configPath = ROOT + mainIniPath
 		}
-
-		ROOT = curDir[:pos]
-
-		configPath = ROOT + mainIniPath
 	}
 
 	TemplateDir = ROOT + "/template/"
 
 	ConfigFile, err = goconfig.LoadConfigFile(configPath)
 	if err != nil {
-		panic(err)
+		// panic(err)
+		fmt.Println("load config file error:", err)
+		ConfigFile, _ = goconfig.LoadFromData([]byte(""))
 	}
 
 	if err = loadIncludeFiles(); err != nil {
@@ -89,6 +92,17 @@ func ReloadConfigFile() {
 		return
 	}
 	fmt.Println("reload config file successfully！")
+}
+
+func SaveConfigFile() error {
+	err := goconfig.SaveConfigFile(ConfigFile, ROOT+mainIniPath)
+	if err != nil {
+		fmt.Println("save config file error:", err)
+		return err
+	}
+
+	fmt.Println("save config file successfully!")
+	return nil
 }
 
 func loadIncludeFiles() error {
