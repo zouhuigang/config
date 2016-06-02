@@ -17,6 +17,8 @@ var (
 
 	ROOT string
 
+	configRoot string
+
 	TemplateDir string
 )
 
@@ -42,22 +44,19 @@ func init() {
 		curDir, _ := os.Getwd()
 		pos := strings.LastIndex(curDir, "src")
 		if pos == -1 {
-			// panic("can't find " + mainIniPath)
-			fmt.Println("can't find " + mainIniPath)
-		} else {
-			ROOT = curDir[:pos]
-
-			configPath = ROOT + mainIniPath
+			panic("can't find " + mainIniPath)
 		}
-	}
 
+		ROOT = curDir[:pos]
+
+		configPath = ROOT + mainIniPath
+	}
+	configRoot = ROOT + "/config/"
 	TemplateDir = ROOT + "/template/"
 
 	ConfigFile, err = goconfig.LoadConfigFile(configPath)
 	if err != nil {
-		// panic(err)
-		fmt.Println("load config file error:", err)
-		ConfigFile, _ = goconfig.LoadFromData([]byte(""))
+		panic(err)
 	}
 
 	if err = loadIncludeFiles(); err != nil {
@@ -94,22 +93,16 @@ func ReloadConfigFile() {
 	fmt.Println("reload config file successfully！")
 }
 
-func SaveConfigFile() error {
-	err := goconfig.SaveConfigFile(ConfigFile, ROOT+mainIniPath)
-	if err != nil {
-		fmt.Println("save config file error:", err)
-		return err
-	}
-
-	fmt.Println("save config file successfully!")
-	return nil
-}
-
 func loadIncludeFiles() error {
 	includeFile := ConfigFile.MustValue("include_files", "path", "")
 	if includeFile != "" {
 		includeFiles := strings.Split(includeFile, ",")
-		return ConfigFile.AppendFiles(includeFiles...)
+
+		incFiles := make([]string, len(includeFiles))
+		for i, incFile := range includeFiles {
+			incFiles[i] = configRoot + incFile
+		}
+		return ConfigFile.AppendFiles(incFiles...)
 	}
 
 	return nil
