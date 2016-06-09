@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/Unknwon/goconfig"
 )
@@ -16,8 +14,6 @@ var (
 	ConfigFile *goconfig.ConfigFile
 
 	ROOT string
-
-	configRoot string
 
 	TemplateDir string
 )
@@ -44,37 +40,29 @@ func init() {
 		curDir, _ := os.Getwd()
 		pos := strings.LastIndex(curDir, "src")
 		if pos == -1 {
-			panic("can't find " + mainIniPath)
+			// panic("can't find " + mainIniPath)
+			fmt.Println("can't find " + mainIniPath)
+		} else {
+			ROOT = curDir[:pos]
+
+			configPath = ROOT + mainIniPath
 		}
-
-		ROOT = curDir[:pos]
-
-		configPath = ROOT + mainIniPath
 	}
-	configRoot = ROOT + "/config/"
+
 	TemplateDir = ROOT + "/template/"
 
 	ConfigFile, err = goconfig.LoadConfigFile(configPath)
 	if err != nil {
-		panic(err)
+		// panic(err)
+		fmt.Println("load config file error:", err)
+		ConfigFile, _ = goconfig.LoadFromData([]byte(""))
 	}
 
 	if err = loadIncludeFiles(); err != nil {
 		panic("load include files error:" + err.Error())
 	}
 
-	go func() {
-		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, syscall.SIGUSR1)
-
-		for {
-			sig := <-ch
-			switch sig {
-			case syscall.SIGUSR1:
-				ReloadConfigFile()
-			}
-		}
-	}()
+	go signalReload()
 }
 
 func ReloadConfigFile() {
@@ -93,16 +81,22 @@ func ReloadConfigFile() {
 	fmt.Println("reload config file successfully！")
 }
 
+func SaveConfigFile() error {
+	err := goconfig.SaveConfigFile(ConfigFile, ROOT+mainIniPath)
+	if err != nil {
+		fmt.Println("save config file error:", err)
+		return err
+	}
+
+	fmt.Println("save config file successfully!")
+	return nil
+}
+
 func loadIncludeFiles() error {
 	includeFile := ConfigFile.MustValue("include_files", "path", "")
 	if includeFile != "" {
 		includeFiles := strings.Split(includeFile, ",")
-
-		incFiles := make([]string, len(includeFiles))
-		for i, incFile := range includeFiles {
-			incFiles[i] = configRoot + incFile
-		}
-		return ConfigFile.AppendFiles(incFiles...)
+		return ConfigFile.AppendFiles(includeFiles...)
 	}
 
 	return nil
