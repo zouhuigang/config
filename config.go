@@ -39,7 +39,7 @@ func init() {
 
 	ROOT = filepath.Dir(filepath.Dir(binaryPath))
 
-	configPath := ROOT + mainIniPath
+	configPath := ROOT + siteRoot + mainIniPath
 
 	if !fileExist(configPath) {
 		curDir, _ := os.Getwd()
@@ -50,7 +50,7 @@ func init() {
 
 		ROOT = curDir[:pos]
 
-		configPath = ROOT + mainIniPath
+		configPath = ROOT + siteRoot + mainIniPath
 	}
 	configRoot = ROOT + siteRoot + "/config/"
 	TemplateDir = ROOT + siteRoot + "/template/"
