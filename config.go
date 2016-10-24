@@ -22,7 +22,8 @@ var (
 	TemplateDir string
 )
 
-const mainIniPath = "/config/env.ini"
+const siteRoot = "app/"
+const mainIniPath = siteRoot + "config/env.ini"
 
 func init() {
 	curFilename := os.Args[0]
@@ -51,8 +52,8 @@ func init() {
 
 		configPath = ROOT + mainIniPath
 	}
-	configRoot = ROOT + "/config/"
-	TemplateDir = ROOT + "/template/"
+	configRoot = ROOT + siteRoot + "/config/"
+	TemplateDir = ROOT + siteRoot + "/template/"
 
 	ConfigFile, err = goconfig.LoadConfigFile(configPath)
 	if err != nil {
@@ -79,7 +80,7 @@ func init() {
 
 func ReloadConfigFile() {
 	var err error
-	configPath := ROOT + mainIniPath
+	configPath := ROOT + siteRoot + mainIniPath
 	ConfigFile, err = goconfig.LoadConfigFile(configPath)
 	if err != nil {
 		fmt.Println("reload config file, error:", err)
